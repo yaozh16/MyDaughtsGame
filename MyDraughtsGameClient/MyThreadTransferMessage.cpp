@@ -130,6 +130,10 @@ void MyThreadTransferMessage::run()//Parse队列QList中数据
                 {
                     emit Broadcast_Enemy_Fail();
                 }
+                else if(command=="AutoPeace")
+                {
+                    emit Broadcast_AutoPeace();
+                }
             }
         }
     }
@@ -257,6 +261,21 @@ void MyThreadTransferMessage::Hello()
     QDataStream data(&ByteMessage,QIODevice::ReadWrite);
     data.setVersion(QDataStream::Qt_5_6);
     data<<QString("H")<<QString("Hello");
+    socket->write(ByteMessage);
+    msleep(200);
+}
+void MyThreadTransferMessage::on_LogOut()
+{
+    socket->disconnect();
+    socket->waitForDisconnected();
+}
+void MyThreadTransferMessage::on_AutoPeace()
+{
+    QByteArray ByteMessage;
+    ByteMessage.clear();
+    QDataStream data(&ByteMessage,QIODevice::ReadWrite);
+    data.setVersion(QDataStream::Qt_5_6);
+    data<<QString("AutoPeace");
     socket->write(ByteMessage);
     msleep(200);
 }

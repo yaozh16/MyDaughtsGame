@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QDialog>
 #include <QTextEdit>
+#include <QEventLoop>
 #include "MyThreadCaculate.h"
 #include "MyThreadTransferMessage.h"
 namespace Ui {
@@ -30,7 +31,7 @@ private:
     Ui::Dialog *ui;
     bool connectFlag;           //连接状态
     QString AccountName;        //用户名
-
+    int peaceCount;             //控制和棋-1时未开始计算
     //登录界面
     QPushButton*     Button_LogInDialog;
     QDialog*         LogInDialog;
@@ -43,10 +44,12 @@ private:
     //操作界面
     QWidget*         OperationWidget;
     QLineEdit*       Edit_Chat;
+    QPushButton*     Button_BackToLogIn;
     QPushButton*     Button_ChatSend;
     QPushButton*     Button_Surrender;
     QPushButton*     Button_Peace;
     QPushButton*     Button_Ready;
+    QPushButton*     Button_AI;
     QTextEdit*       Edit_Print;
     //棋盘界面
     QWidget*         GridWidget;
@@ -59,7 +62,7 @@ private:
     QList<QVector<QPoint>> CurrentAvailableSteps;
     int StepIndex;
     bool MyTurn;
-    bool Start;
+    int Start;              //0表示没开始,1表示我方先行，2表示敌方先行
     MyThreadCaculate* ThreadC;
     MyThreadTransferMessage* ThreadT;
     void LogInInit();
@@ -68,18 +71,22 @@ private:
     void Game_DisplayClear();
     void GameEnd(int ResultState);//1为胜利，-1为失败，0为平局
 signals:
+    void Broadcast_LogOut();
     void Request_Connect(QString IP,int com);
     void Request_Ready();
     void Request_Peace();
     void Request_Surrender();
     void Reply_Peace(bool agree);
     void Reply_Surrender(bool agree);
+    void Broadcast_Auto_Peace();
     void Request_Chat(QString);
     void Broadcast_Update_Move(QVector<QPoint> Steps);
     void Broadcast_Fail();
     void Broadcast_End();//由后知道结束的人发
     void Broadcast_GameInit();
 public slots:
+    void on_Button_AI_clicked();
+    void on_Button_BackToLogIn_clicked();//返回初始状态
     void on_Button_LogIn_clicked();//登录按钮
     void on_ThreadT_Update_Connect_State(bool success);//返回连接结果
     void on_Button_Ready_clicked();//准备好了
@@ -91,6 +98,7 @@ public slots:
     void on_Surrender_Requested();
     void on_Peace_Reply(bool agree);
     void on_Surrender_Reply(bool agree);
+    void on_AutoPeace();
     void on_Button_ChatSend_clicked();
     void on_ThreadT_ReceiveChat(QString message);
     void on_ThreadT_Enemy_Fail();

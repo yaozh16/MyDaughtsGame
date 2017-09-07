@@ -33,6 +33,7 @@ signals:
     void Broadcast_Request_Surrender();
     void Broadcast_Reply_Peace(bool reply);
     void Broadcast_Request_Peace();
+    void Broadcast_AutoPeace();
     void Broadcast_Received_Chat(QString message);
     void Broadcast_Enemy_Fail();//对方无子可走
 public slots:
@@ -47,9 +48,11 @@ public slots:
     void on_Request_Surrender();
     void on_Reply_Peace(bool agree);
     void on_Reply_Surrender(bool agree);
+    void on_AutoPeace();
     void on_Chat(QString message);
     void on_Fail();//我方无子可走
     void on_End();//发给服务器
+    void on_LogOut();
 };
 
 #endif // MYTHREADTRANSFERMESSAGE_H

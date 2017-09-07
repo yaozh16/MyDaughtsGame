@@ -12,7 +12,6 @@ Dialog::Dialog(QWidget *parent) :
     ui(new Ui::Dialog)
 {
     ui->setupUi(this);
-
     setWindowTitle("My Drought Game");
     //登录界面
     {
@@ -22,6 +21,12 @@ Dialog::Dialog(QWidget *parent) :
             Button_LogInDialog->setText("登录");
             Button_LogInDialog->setGeometry(0,0,300,300);
             connect(Button_LogInDialog,&QPushButton::clicked,this,[this](){LogInDialog->exec();});
+
+            Button_AI=new QPushButton(this);
+            Button_AI->setText("登录");
+            Button_AI->setGeometry(0,0,300,300);
+            Button_AI->hide();
+
         }
         //登录对话框配置
         {
@@ -95,16 +100,22 @@ Dialog::Dialog(QWidget *parent) :
             OperationWidget=new QWidget;
             GameLayout->addWidget(OperationWidget,500,1,100,500);
             QGridLayout* OperationLayout=new QGridLayout(OperationWidget);
+
+            Button_BackToLogIn=new QPushButton;
+            OperationLayout->addWidget(Button_BackToLogIn,1,1,25,100);
+            Button_BackToLogIn->setText("返回初始界面");
+
+
             Button_Surrender=new QPushButton;
-            OperationLayout->addWidget(Button_Surrender,1,1,30,100);
+            OperationLayout->addWidget(Button_Surrender,26,1,25,100);
             Button_Surrender->setText("投降");
 
             Button_Peace=new QPushButton;
-            OperationLayout->addWidget(Button_Peace,31,1,30,100);
+            OperationLayout->addWidget(Button_Peace,51,1,25,100);
             Button_Peace->setText("求和");
 
             Button_Ready=new QPushButton;
-            OperationLayout->addWidget(Button_Ready,61,1,40,100);
+            OperationLayout->addWidget(Button_Ready,76,1,25,100);
             Button_Ready->setText("在线匹配");
 
             Button_ChatSend=new QPushButton;
@@ -139,6 +150,8 @@ Dialog::~Dialog()
 }
 void Dialog::InitSSConnections()
 {
+    connect(Button_AI,SIGNAL(clicked(bool)),this,SLOT(on_Button_AI_clicked()));
+    connect(this,SIGNAL(Broadcast_LogOut()),ThreadT,SLOT(on_LogOut()));
     connect(this,SIGNAL(Broadcast_GameInit()),ThreadC,SLOT(on_Game_Init()));
     connect(this,SIGNAL(Request_Connect(QString,int)),ThreadT,SLOT(on_Connect(QString,int)));
     connect(ThreadT,SIGNAL(Broadcast_Connect_Success(bool)),this,SLOT(on_ThreadT_Update_Connect_State(bool)));
@@ -158,12 +171,18 @@ void Dialog::InitSSConnections()
     connect(this,SIGNAL(Reply_Surrender(bool)),ThreadT,SLOT(on_Reply_Surrender(bool)));
     connect(ThreadT,SIGNAL(Broadcast_Reply_Peace(bool)),this,SLOT(on_Peace_Reply(bool)));
     connect(ThreadT,SIGNAL(Broadcast_Reply_Surrender(bool)),this,SLOT(on_Surrender_Reply(bool)));
+    //其他
+    connect(this,SIGNAL(Broadcast_Auto_Peace()),ThreadT,SLOT(on_AutoPeace()));
+    connect(ThreadT,SIGNAL(Broadcast_AutoPeace()),this,SLOT(on_AutoPeace()));
     connect(this,SIGNAL(Request_Chat(QString)),ThreadT,SLOT(on_Chat(QString)));
     connect(ThreadT,SIGNAL(Broadcast_Received_Chat(QString)),this,SLOT(on_ThreadT_ReceiveChat(QString)));
     connect(ThreadT,SIGNAL(Broadcast_Enemy_Lost()),this,SLOT(on_ThreadT_Enemy_Lost()));
-     connect(ThreadT,SIGNAL(Broadcast_Enemy_Fail()),this,SLOT(on_ThreadT_Enemy_Fail()));
+    connect(ThreadT,SIGNAL(Broadcast_Enemy_Fail()),this,SLOT(on_ThreadT_Enemy_Fail()));
     connect(this,SIGNAL(Broadcast_Fail()),ThreadT,SLOT(on_Fail()));
     connect(this,SIGNAL(Broadcast_End()),ThreadT,SLOT(on_End()));
+
+
+    connect(Button_BackToLogIn,SIGNAL(clicked(bool)),this,SLOT(on_Button_BackToLogIn_clicked()));
     connect(Button_Ready,SIGNAL(clicked(bool)),this,SLOT(on_Button_Ready_clicked()));
     connect(Button_Peace,SIGNAL(clicked(bool)),this,SLOT(on_Button_Peace_clicked()));
     connect(Button_Surrender,SIGNAL(clicked(bool)),this,SLOT(on_Button_Surrender_clicked()));
@@ -179,8 +198,9 @@ void Dialog::LogInInit()
 void Dialog::GameInit()
 {
     emit Broadcast_GameInit();
-    Start=false;
+    Start=0;
     MyTurn=false;
+    peaceCount=-1;
     setFixedSize(500,600);
     Button_LogInDialog->hide();
     GridWidget->show();
@@ -197,7 +217,9 @@ void Dialog::GameInit()
     Game_DisplayClear();
     StepIndex=0;
 }
-
+void Dialog::on_Button_AI_clicked()
+{;
+}
 void Dialog::on_Button_LogIn_clicked()
 {
     qDebug("try to log in");
@@ -214,6 +236,14 @@ void Dialog::on_ThreadT_Update_Connect_State(bool success)
     else
         LogInInit();
     connectFlag=success;
+}
+
+void Dialog::on_Button_BackToLogIn_clicked()
+{
+    if(Start>0)
+        emit Broadcast_LogOut();
+    GameInit();
+    LogInInit();
 }
 
 void Dialog::on_Button_Ready_clicked()
@@ -235,8 +265,13 @@ void Dialog::on_ThreadT_Begin(bool first)//开始后棋盘生效
     else
         Text+=QString("Second\n");
     Edit_Print->setText(Text);
-    Start=true;
+    if (first)
+        Start=1;
+    else
+        Start=2;
+
     MyTurn=first;
+    Game_DisplayClear();
     if(MyTurn)
         for(auto iter=CurrentAvailableSteps.begin();iter!=CurrentAvailableSteps.end();iter++)
         {
@@ -281,18 +316,19 @@ void Dialog::on_pushButton_Grid(int n)
     if(FindFlag)//可以走
     {
         qDebug()<<"FindFlag true";
-        for(auto iter=CurrentAvailableSteps.begin();iter!=CurrentAvailableSteps.end();)
+        //剪枝
+        for(int i=0;i<CurrentAvailableSteps.size();)
         {
-            QVector<QPoint> t=(*iter);
+            QVector<QPoint> t=CurrentAvailableSteps.at(i);
             if(t[StepIndex]!=currentClick)
             {
-                iter=CurrentAvailableSteps.erase(iter);
+                CurrentAvailableSteps.removeAt(i);
             }
             else
-                iter++;
+                i++;
         }
         qDebug("CurrentAvailableSteps.size()= %d",CurrentAvailableSteps.size());
-        if(CurrentAvailableSteps.size()==1)
+        if(CurrentAvailableSteps.size()==1)//只有一种了
         {
             on_MoveSteps(CurrentAvailableSteps.at(0));
             emit Broadcast_Update_Move(CurrentAvailableSteps.at(0));
@@ -344,13 +380,13 @@ void Dialog::Game_DisplayClear()
     for(int i=0;i<100;i++)
     {
         if(Grid[i]==1)
-            GridButtons[i]->setStyleSheet("border-image: url(:/resources/01.png);");
+            GridButtons[i]->setStyleSheet("border-image: url(:/resources/0"+QString::number(Start)+".png);");
         else if(Grid[i]==2)
-            GridButtons[i]->setStyleSheet("border-image: url(:/resources/02.png);");
+            GridButtons[i]->setStyleSheet("border-image: url(:/resources/0"+QString::number(3-Start)+".png);");
         else if(Grid[i]==-1)
-            GridButtons[i]->setStyleSheet("border-image: url(:/resources/King01.png);");
+            GridButtons[i]->setStyleSheet("border-image: url(:/resources/King0"+QString::number(Start)+".png);");
         else if(Grid[i]==-2)
-            GridButtons[i]->setStyleSheet("border-image: url(:/resources/King02.png);");
+            GridButtons[i]->setStyleSheet("border-image: url(:/resources/King0"+QString::number(3-Start)+".png);");
         else
             GridButtons[i]->setStyleSheet("");
         if((i/10+i%10)%2==1)
@@ -364,7 +400,28 @@ void Dialog::Game_DisplayClear()
 void Dialog::on_MoveSteps(QVector<QPoint> Steps)//暂时没有特效
 {
     MyTurn=!MyTurn;
+    if(peaceCount>=0)
+    {
+        if(Steps.size()<3)
+            peaceCount+=1;
+        else
+            peaceCount==0;
+        if(peaceCount>39)
+        {
+
+            emit Broadcast_Auto_Peace();
+            QMessageBox box(this);
+            box.setText("40 Turns With No Jump:Auto Peace Reached");
+            QString Text=Edit_Print->toPlainText();
+            Text+="40 Turns With No Jump:Auto Peace Reached\n";
+            Edit_Print->setText(Text);
+            box.exec();
+            GameEnd(0);
+            return;
+        }
+    }
     int num=Grid[Steps[0].x()+Steps[0].y()*10];
+    Grid[Steps[0].x()+Steps[0].y()*10]=num;
     for(int i=0;i<Steps.size()-1;i++)//路径上置0
     {
         int dx=Steps[i+1].x()-Steps[i].x();
@@ -378,6 +435,7 @@ void Dialog::on_MoveSteps(QVector<QPoint> Steps)//暂时没有特效
             int py=Steps[i].y()+j*dy;
             Grid[px+py*10]=0;
         }
+        Grid[Steps[i+1].x()+Steps[i+1].y()*10]=num;
     }
     QPoint lastPoint=Steps[Steps.size()-1];
     if(num==1&&lastPoint.y()==0)
@@ -430,6 +488,8 @@ void Dialog::on_Peace_Requested()//收到求和请求
         emit Reply_Peace(false);
         qDebug()<<"No";
     }
+    if(peaceCount<0)
+        peaceCount==0;
 }
 void Dialog::on_Surrender_Requested()//收到投降请求
 {
@@ -462,13 +522,14 @@ void Dialog::on_Peace_Reply(bool agree)//获得求和回复
     QMessageBox box;
     if(agree)
     {
+        emit Broadcast_End();
         box.setText("Enemy Accepted Our Peace Request");
         QString Text=Edit_Print->toPlainText();
         Text+="Enemy Accepted Our Peace Request\n";
         Edit_Print->setText(Text);
         box.exec();
         GameEnd(0);
-        emit Broadcast_End();
+
     }
     else
     {
@@ -478,6 +539,8 @@ void Dialog::on_Peace_Reply(bool agree)//获得求和回复
         Edit_Print->setText(Text);
         box.exec();
     }
+    if(peaceCount<0)
+        peaceCount==0;
 }
 void Dialog::on_Surrender_Reply(bool agree)//获得投降回复
 {
@@ -501,6 +564,19 @@ void Dialog::on_Surrender_Reply(bool agree)//获得投降回复
         box.exec();
     };
 }
+void Dialog::on_AutoPeace()
+{
+    emit Broadcast_End();
+    QMessageBox box(this);
+    box.setText("40 Turns With No Jump:Auto Peace Reached");
+    QString Text=Edit_Print->toPlainText();
+    Text+="40 Turns With No Jump:Auto Peace Reached\n";
+    Edit_Print->setText(Text);
+    box.exec();
+    GameEnd(0);
+}
+
+
 void Dialog::on_Button_ChatSend_clicked()
 {
     QString message=Edit_Chat->text();
