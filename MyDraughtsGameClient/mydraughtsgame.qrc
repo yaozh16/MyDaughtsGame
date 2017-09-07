@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/01.png</file>
+        <file>resources/02.png</file>
+        <file>resources/Avaliable.png</file>
+        <file>resources/Black.png</file>
+        <file>resources/Final.jpg</file>
+        <file>resources/King01.png</file>
+        <file>resources/King02.png</file>
+        <file>resources/White.png</file>
+        <file>resources/GreenLight.png</file>
+        <file>resources/RedLight.png</file>
+    </qresource>
+</RCC>
