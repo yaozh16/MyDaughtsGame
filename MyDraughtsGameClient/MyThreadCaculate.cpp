@@ -1,8 +1,9 @@
 #include "MyThreadCaculate.h"
-
+#include <QDebug>
 MyThreadCaculate::MyThreadCaculate(QObject *parent)
 {
     on_Game_Init();
+    srand(QTime::currentTime().msecsSinceStartOfDay());
     Direction.push_back(QPoint(1,1));
     Direction.push_back(QPoint(-1,1));
     Direction.push_back(QPoint(1,-1));
@@ -25,43 +26,46 @@ void MyThreadCaculate::on_Game_Init()
     AvailableSteps.clear();
     CurrentMethod.clear();
     StepsYetToUpdate.clear();
+    QVector<QPoint> t;
+    t.push_back(QPoint(0,0));
+    on_Update_Move(t);
 }
-void MyThreadCaculate::SearchStep_Soldier(int indexX,int indexY, bool Jumpflag)
+void MyThreadCaculate::SearchStep_Soldier(int indexX,int indexY, bool Jumpflag,int color)
 {
     for(int i=0;i<4;i++)
     {
         int tx=indexX+Direction[i].x();
         int ty=indexY+Direction[i].y();
         if(tx<0||ty<0||tx>9||ty>9)
-            EndSearchStepAndSave();
+            EndSearchStepAndSave(color);
         else
         {
             int num=Grid[tx+ty*10];
-            if(num==1||num==-1||num==3)
-                EndSearchStepAndSave();
+            if(num==color||num==-color||num==3)
+                EndSearchStepAndSave(color);
             else if(num==0)
             {
                 if(Jumpflag==false)
                 {
                     CurrentMethod.push_back(QPoint(tx,ty));
-                    EndSearchStepAndSave();
+                    EndSearchStepAndSave(color);
                     CurrentMethod.pop_back();
                 }
                 else
-                    EndSearchStepAndSave();
+                    EndSearchStepAndSave(color);
             }
-            else if(num==2||num==-2)
+            else if(num==3-color||num==color-3)
             {
                 int nx=tx+Direction[i].x();
                 int ny=ty+Direction[i].y();
                 if(nx<0||ny<0||nx>9||ny>9||Grid[nx+ny*10]!=0)
-                    EndSearchStepAndSave();
+                    EndSearchStepAndSave(color);
                 else
                 {
                     CurrentMethod.push_back(QPoint(nx,ny));
                     CurrentEat+=1;
                     Grid[tx+ty*10]=3;
-                    SearchStep_Soldier(nx,ny,true);
+                    SearchStep_Soldier(nx,ny,true,color);
                     CurrentMethod.pop_back();
                     CurrentEat-=1;
                     Grid[tx+ty*10]=num;
@@ -70,7 +74,7 @@ void MyThreadCaculate::SearchStep_Soldier(int indexX,int indexY, bool Jumpflag)
         }
     }
 }
-void MyThreadCaculate::SearchStep_King(int indexX,int indexY, bool Jumpflag)
+void MyThreadCaculate::SearchStep_King(int indexX, int indexY, bool Jumpflag, int color)
 {
     for(int i=0;i<4;i++)
     {
@@ -87,35 +91,40 @@ void MyThreadCaculate::SearchStep_King(int indexX,int indexY, bool Jumpflag)
             {
                 //防止跳子到边界
                 CurrentEat-=JumpEatInThisDirection;
-                EndSearchStepAndSave();
+                EndSearchStepAndSave(color);
                 CurrentEat+=JumpEatInThisDirection;
                 break;
             }
             else
             {
                 int num=Grid[tx+ty*10];
-                if(num==1||num==-1||num==3)
-                    EndSearchStepAndSave();
+                if(num==color||num==-color||num==3)
+                {
+                    CurrentEat-=JumpEatInThisDirection;
+                    EndSearchStepAndSave(color);
+                    CurrentEat+=JumpEatInThisDirection;
+                    break;
+                }
                 else if(num==0)
                 {
                     //第一次走步且在第一次跳跃之前
                     if(JumpEatInThisDirection==0&&Jumpflag==false)
                     {
                         CurrentMethod.push_back(QPoint(tx,ty));
-                        EndSearchStepAndSave();
+                        EndSearchStepAndSave(color);
                         CurrentMethod.pop_back();
                     }
                     //已经在该方向跳跃过或者不是第一步，则必须在该方向上跳过子才能停
                     else if(JumpEatInThisDirection==1)
                     {
                         CurrentMethod.push_back(QPoint(tx,ty));
-                        SearchStep_King(tx,ty,true);
+                        SearchStep_King(tx,ty,true,color);
                         CurrentMethod.pop_back();
                     }
                     else
-                        EndSearchStepAndSave();
+                        EndSearchStepAndSave(color);
                 }
-                else if(num==2||num==-2)
+                else if(num==3-color||num==color-3)
                 {
                     int nx=tx+Direction[i].x();
                     int ny=ty+Direction[i].y();
@@ -124,7 +133,7 @@ void MyThreadCaculate::SearchStep_King(int indexX,int indexY, bool Jumpflag)
                             Grid[nx+ny*10]!=0)//防止跳到别的子上
                     {
                         CurrentEat-=JumpEatInThisDirection;
-                        EndSearchStepAndSave();
+                        EndSearchStepAndSave(color);
                         CurrentEat+=JumpEatInThisDirection;
                         break;
                     }
@@ -147,7 +156,7 @@ void MyThreadCaculate::SearchStep_King(int indexX,int indexY, bool Jumpflag)
         }
     };
 }
-void MyThreadCaculate::EndSearchStepAndSave()//在这个位置保存结束
+void MyThreadCaculate::EndSearchStepAndSave(int color)//在这个位置保存结束
 {
     static QVector<QPoint> last;
     if(last==CurrentMethod)
@@ -159,15 +168,22 @@ void MyThreadCaculate::EndSearchStepAndSave()//在这个位置保存结束
     {
         QPoint start=CurrentMethod[0];
         QPoint next=CurrentMethod[1];
-        if(Grid[start.x()+start.y()*10]==1&&next.y()==start.y()+1)
+        if(color==1&&Grid[start.x()+start.y()*10]==1&&next.y()==start.y()+1)
+            return;
+        if(color==2&&Grid[start.x()+start.y()*10]==2&&next.y()==start.y()-1)
             return;
     }
     if(CurrentEat==MaxEat)
     {
+        QPoint start=CurrentMethod[0];
+        QPoint last=CurrentMethod[CurrentMethod.size()-1];
         AvailableSteps.push_back(CurrentMethod);
     }
     else if(CurrentEat>MaxEat)
     {
+        QPoint start=CurrentMethod[0];
+        QPoint last=CurrentMethod[CurrentMethod.size()-1];
+
         AvailableSteps.clear();
         AvailableSteps.push_back(CurrentMethod);
         MaxEat=CurrentEat;
@@ -228,16 +244,26 @@ void MyThreadCaculate::run()
                 CurrentEat=0;
                 CurrentMethod.clear();
                 CurrentMethod.push_back(QPoint(j,i));
-                SearchStep_Soldier(j,i,false);
+                SearchStep_Soldier(j,i,false,1);
             }
             else if(Grid[j+i*10]==-1)
             {
                 CurrentEat=0;
                 CurrentMethod.clear();
                 CurrentMethod.push_back(QPoint(j,i));
-                SearchStep_King(j,i,false);
+                SearchStep_King(j,i,false,1);
             }
         emit Broadcast_ThreadC_UpdateAvailabelSteps(AvailableSteps);
+        qDebug()<<"run:AI_State="<<AI_State;
+        if(AI_State==1)
+        {
+            AI_State=2;
+            AI_Move();
+
+        }else if(AI_State==2)
+        {
+            AI_State=1;
+        }
         while(1)
         {
             if(UpdateSteps()==1)
@@ -249,4 +275,81 @@ void MyThreadCaculate::run()
 void MyThreadCaculate::on_Update_Move(QVector<QPoint> Steps)
 {
     StepsYetToUpdate.push_back(Steps);
+}
+void MyThreadCaculate::on_AI_Load(QVector<int> Grid_)
+{
+    if(AI_State==0)
+        return;
+    AI_State==4;
+    Grid=Grid_;
+    QVector<QPoint> t;
+    t.push_back(QPoint(0,0));
+    on_Update_Move(t);
+    qDebug()<<"Load";
+}
+void MyThreadCaculate::on_AI_State(bool on)
+{
+    AI_State=(on?4:0);
+    qDebug()<<"-----------AI State :"<<AI_State;
+
+}
+void MyThreadCaculate::on_AI_Begin(bool playerFirst)
+{
+    qDebug()<<"AI_begin";
+    if(AI_State==0)
+        return;
+    AI_State=1;
+    if(!playerFirst)
+    {
+        QVector<QPoint> t;
+        t.push_back(QPoint(0,0));
+        on_Update_Move(t);
+    }
+    qDebug()<<"-----------AI State :"<<AI_State;
+}
+void MyThreadCaculate::AI_Move()
+{
+    qDebug()<<"-----------AI_Move";
+    msleep(1000);
+    if(AI_State==0)
+        return;
+    CurrentEat=0;
+    MaxEat=0;
+    CurrentMethod.clear();
+    AvailableSteps.clear();
+    for(int i=0;i<10;i++)
+        for(int j=0;j<10;j++)
+            if(Grid[j+i*10]==2)
+            {
+                CurrentEat=0;
+                CurrentMethod.clear();
+                CurrentMethod.push_back(QPoint(j,i));
+                SearchStep_Soldier(j,i,false,2);
+            }
+            else if(Grid[j+i*10]==-2)
+            {
+                CurrentEat=0;
+                CurrentMethod.clear();
+                CurrentMethod.push_back(QPoint(j,i));
+                SearchStep_King(j,i,false,2);
+            }
+    if(AvailableSteps.size()>0)
+    {
+        qDebug()<<"AvailableSteps size: "<<AvailableSteps.size();
+        int index=rand()%AvailableSteps.size();
+        QVector<QPoint> t=AvailableSteps.at(index);
+        emit Broadcast_AI_Move(t);
+    }
+    else
+    {
+        qDebug()<<"AI_Fail";
+
+        AI_State=3;
+        emit AI_Fail();
+    }
+}
+void MyThreadCaculate::Player_Fail()
+{
+    on_Game_Init();
+    AI_State==3;
 }

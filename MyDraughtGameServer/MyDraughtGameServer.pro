@@ -8,15 +8,15 @@ QT       += core gui
 QT       += network
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = MyDroughtGameServer
+TARGET = MyDraughtGameServer
 TEMPLATE = app
 
 
 SOURCES += main.cpp\
         dialog.cpp \
-    MyDroughtServer.cpp
+    MyDraughtServer.cpp
 
 HEADERS  += dialog.h \
-    MyDroughtServer.h
+    MyDraughtServer.h
 
 FORMS    += dialog.ui

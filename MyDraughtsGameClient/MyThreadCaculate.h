@@ -6,6 +6,8 @@
 #include <QThread>
 #include <QSet>
 #include <QMutex>
+#include <random>
+#include <QTime>
 class MyThreadCaculate : public QThread
 {
     Q_OBJECT
@@ -19,22 +21,31 @@ private:
     int CurrentEat;
     QVector<QPoint> Direction;
     QList<QVector<QPoint>> StepsYetToUpdate;
+    int AI_State;//0关闭,1表示AI回合,2表示玩家回合,3表示未定
 
 protected:
     void run();
 public:
     MyThreadCaculate(QObject *parent=0);
     ~MyThreadCaculate();
-    void SearchStep_Soldier(int indexX,int indexY, bool Jumpflag);//0~9,0~9
-    void SearchStep_King(int indexX,int indexY, bool Jumpflag);
-    void EndSearchStepAndSave();//在这个位置保存结束
+    void SearchStep_Soldier(int indexX, int indexY, bool Jumpflag, int color);
+    void SearchStep_King(int indexX,int indexY, bool Jumpflag,int color);
+    void EndSearchStepAndSave(int color);//在这个位置保存结束
     int UpdateSteps();
+    void AI_Move();
 
 signals:
     void Broadcast_ThreadC_UpdateAvailabelSteps(QList<QVector<QPoint>> AvailableSteps);
+    void Broadcast_AI_Move(QVector<QPoint> Steps);
+    void AI_Fail();
 public slots:
     void on_Update_Move(QVector<QPoint> Steps);
     void on_Game_Init();
+
+    void on_AI_State(bool on);
+    void on_AI_Load(QVector<int> Grid_);
+    void on_AI_Begin(bool playerFirst);
+    void Player_Fail();
 };
 
 #endif // MYTHREADCACULATE_H

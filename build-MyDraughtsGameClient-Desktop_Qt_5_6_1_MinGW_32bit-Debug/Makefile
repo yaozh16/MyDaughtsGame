@@ -192,6 +192,7 @@ Makefile: ../MyDraughtsGameClient/MyDraughtsGameClient.pro C:/Qt/Qt5.6.1/5.6/min
 		C:/Qt/Qt5.6.1/5.6/mingw49_32/mkspecs/features/lex.prf \
 		../MyDraughtsGameClient/MyDraughtsGameClient.pro \
 		C:/Qt/Qt5.6.1/5.6/mingw49_32/lib/qtmaind.prl \
+		C:/Qt/Qt5.6.1/5.6/mingw49_32/lib/Qt5Multimedia.prl \
 		C:/Qt/Qt5.6.1/5.6/mingw49_32/lib/Qt5Widgets.prl \
 		C:/Qt/Qt5.6.1/5.6/mingw49_32/lib/Qt5Gui.prl \
 		C:/Qt/Qt5.6.1/5.6/mingw49_32/lib/Qt5Network.prl \
@@ -330,6 +331,7 @@ C:/Qt/Qt5.6.1/5.6/mingw49_32/mkspecs/features/yacc.prf:
 C:/Qt/Qt5.6.1/5.6/mingw49_32/mkspecs/features/lex.prf:
 ../MyDraughtsGameClient/MyDraughtsGameClient.pro:
 C:/Qt/Qt5.6.1/5.6/mingw49_32/lib/qtmaind.prl:
+C:/Qt/Qt5.6.1/5.6/mingw49_32/lib/Qt5Multimedia.prl:
 C:/Qt/Qt5.6.1/5.6/mingw49_32/lib/Qt5Widgets.prl:
 C:/Qt/Qt5.6.1/5.6/mingw49_32/lib/Qt5Gui.prl:
 C:/Qt/Qt5.6.1/5.6/mingw49_32/lib/Qt5Network.prl:

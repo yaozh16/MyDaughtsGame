@@ -1,6 +1,6 @@
 #ifndef DIALOG_H
 #define DIALOG_H
-
+#include <QSound>
 #include <QDialog>
 #include <QTcpSocket>
 #include <QHostAddress>
@@ -32,6 +32,8 @@ private:
     bool connectFlag;           //连接状态
     QString AccountName;        //用户名
     int peaceCount;             //控制和棋-1时未开始计算
+    QSound* sound;
+    bool AI;
     //登录界面
     QPushButton*     Button_LogInDialog;
     QDialog*         LogInDialog;
@@ -51,6 +53,9 @@ private:
     QPushButton*     Button_Ready;
     QPushButton*     Button_AI;
     QTextEdit*       Edit_Print;
+
+    QPushButton*  Button_Load;
+    QPushButton*  Button_AI_Start;
     //棋盘界面
     QWidget*         GridWidget;
     QVector<QPushButton*> GridButtons;
@@ -67,10 +72,18 @@ private:
     MyThreadTransferMessage* ThreadT;
     void LogInInit();
     void GameInit();
+    void AIInit();
+
     void InitSSConnections();
     void Game_DisplayClear();
     void GameEnd(int ResultState);//1为胜利，-1为失败，0为平局
 signals:
+    void AI_State(bool on);
+    void AI_Load(QVector<int> Grid);
+    void AI_begin(bool playerFirst);
+
+
+    void Broadcast_Grid(QVector<QPoint> Grid);
     void Broadcast_LogOut();
     void Request_Connect(QString IP,int com);
     void Request_Ready();
@@ -80,12 +93,17 @@ signals:
     void Reply_Surrender(bool agree);
     void Broadcast_Auto_Peace();
     void Request_Chat(QString);
+    void Broadcast_Send_Move(QVector<QPoint> Steps);
     void Broadcast_Update_Move(QVector<QPoint> Steps);
     void Broadcast_Fail();
     void Broadcast_End();//由后知道结束的人发
     void Broadcast_GameInit();
 public slots:
     void on_Button_AI_clicked();
+    void on_Button_Load_clicked();
+    void on_Button_AI_Start_clicked();
+
+
     void on_Button_BackToLogIn_clicked();//返回初始状态
     void on_Button_LogIn_clicked();//登录按钮
     void on_ThreadT_Update_Connect_State(bool success);//返回连接结果

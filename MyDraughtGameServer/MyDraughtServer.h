@@ -7,12 +7,12 @@
 #include <QList>
 #include <QMap>
 #include <QMutex>
-class MyDroughtServer: public QThread
+class MyDraughtServer: public QThread
 {
     Q_OBJECT
 public:
-    MyDroughtServer();
-    ~MyDroughtServer();
+    MyDraughtServer();
+    ~MyDraughtServer();
 private:
     QTcpServer* server;
     QMutex mutex;

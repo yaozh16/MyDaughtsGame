@@ -266,8 +266,8 @@ void MyThreadTransferMessage::Hello()
 }
 void MyThreadTransferMessage::on_LogOut()
 {
-    socket->disconnect();
-    socket->waitForDisconnected();
+    qDebug()<<"Log Out";
+    socket->disconnectFromHost();
 }
 void MyThreadTransferMessage::on_AutoPeace()
 {

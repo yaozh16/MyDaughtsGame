@@ -2,7 +2,7 @@
 #define DIALOG_H
 
 #include <QDialog>
-#include "MyDroughtServer.h"
+#include "MyDraughtServer.h"
 namespace Ui {
 class Dialog;
 }
@@ -17,7 +17,7 @@ public:
 
 private:
     Ui::Dialog *ui;
-    MyDroughtServer* server;
+    MyDraughtServer* server;
 public slots:
     void DisplayMessage(QString Message);
     void DisplayState(int notready,int ready,int room);

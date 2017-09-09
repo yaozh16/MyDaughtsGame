@@ -10,5 +10,6 @@
         <file>resources/White.png</file>
         <file>resources/GreenLight.png</file>
         <file>resources/RedLight.png</file>
+        <file>resources/Click.wav</file>
     </qresource>
 </RCC>

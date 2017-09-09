@@ -6,7 +6,7 @@ Dialog::Dialog(QWidget *parent) :
     ui(new Ui::Dialog)
 {
     ui->setupUi(this);
-    server=new MyDroughtServer;
+    server=new MyDraughtServer;
     connect(server,SIGNAL(Broadcast_Message(QString)),this,SLOT(DisplayMessage(QString)));
     connect(server,SIGNAL(Broadcast_State(int,int,int)),this,SLOT(DisplayState(int,int,int)));
     server->start();

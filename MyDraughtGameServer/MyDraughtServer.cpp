@@ -1,8 +1,8 @@
-#include "MyDroughtServer.h"
+#include "MyDraughtServer.h"
 #include <QDataStream>
 #include <random>
 #include <QTimer>
-MyDroughtServer::MyDroughtServer()
+MyDraughtServer::MyDraughtServer()
 {
     server=new QTcpServer;
     server->listen(QHostAddress::Any,6666);
@@ -11,9 +11,9 @@ MyDroughtServer::MyDroughtServer()
     timer->start(500);
     connect(server,SIGNAL(newConnection()),this,SLOT(on_new_connection()));
 }
-MyDroughtServer::~MyDroughtServer()
+MyDraughtServer::~MyDraughtServer()
 {}
-void MyDroughtServer::on_new_connection()
+void MyDraughtServer::on_new_connection()
 {
 
     QTcpSocket* socket=server->nextPendingConnection();
@@ -39,7 +39,7 @@ void MyDroughtServer::on_new_connection()
     connect(socket,SIGNAL(readyRead()),this,SLOT(on_Receive_Message()));
     connect(socket,SIGNAL(stateChanged(QAbstractSocket::SocketState)),this,SLOT(on_socket_state_change(QAbstractSocket::SocketState)));
 }
-void MyDroughtServer::on_Receive_Message()
+void MyDraughtServer::on_Receive_Message()
 {
     QTcpSocket* socket=qobject_cast<QTcpSocket*>(sender());
     QByteArray reply;
@@ -94,7 +94,7 @@ void MyDroughtServer::on_Receive_Message()
     }
 
 }
-void MyDroughtServer::on_socket_state_change(QAbstractSocket::SocketState state)
+void MyDraughtServer::on_socket_state_change(QAbstractSocket::SocketState state)
 {
     QTcpSocket* socket=qobject_cast<QTcpSocket*>(sender());
     int SocketIndex=MapToIndex[socket];
@@ -121,7 +121,7 @@ void MyDroughtServer::on_socket_state_change(QAbstractSocket::SocketState state)
     qDebug()<<"Server: socket state change to : "<<tstate;
     emit Broadcast_Message("Server: Socket "+QString::number(SocketIndex)+" state change to : "+tstate);
 }
-void MyDroughtServer::on_socket_disconnection(int SocketIndex)
+void MyDraughtServer::on_socket_disconnection(int SocketIndex)
 {
     mutex.lock();
     QTcpSocket* socket=MapToSocket[SocketIndex];
@@ -148,7 +148,7 @@ void MyDroughtServer::on_socket_disconnection(int SocketIndex)
     mutex.unlock();
 }
 
-void MyDroughtServer::run()
+void MyDraughtServer::run()
 {
     while(1)
     {
@@ -190,7 +190,7 @@ void MyDroughtServer::run()
         }
     }
 }
-void MyDroughtServer::on_BroadcastState()
+void MyDraughtServer::on_BroadcastState()
 {
    emit Broadcast_State(NotReadyClient.size(),ReadyClient.size(),Rooms.size()/2);
 }
